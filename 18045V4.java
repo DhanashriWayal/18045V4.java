@@ -3,10 +3,12 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import java.sql.*;
 import java.util.List;
 import java.util.ArrayList;
 
-public class StationeryShopGUI {
+public class StationeryShopGUI 
+{
     private JFrame frame;
     private JTextField customerNameField;
     private JTextField productIdField;
@@ -16,7 +18,12 @@ public class StationeryShopGUI {
     private List<OrderItem> orderItems;
     private int totalAmount;
 
-    public StationeryShopGUI() {
+    private static final String DB_URL = "jdbc:mysql://sql12.freesqldatabase.com:3306/sql12751589";
+    private static final String DB_USERNAME = "sql12751589";
+    private static final String DB_PASSWORD = "E7vpYsAfzn";
+
+    public StationeryShopGUI() 
+    {
         frame = new JFrame("Stationery Shop");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
@@ -33,27 +40,36 @@ public class StationeryShopGUI {
         topPanel.add(errorLabel);
         frame.add(topPanel, BorderLayout.NORTH);
 
-        customerNameField.getDocument().addDocumentListener(new DocumentListener() {
-            private void validateCustomerName() {
+        customerNameField.getDocument().addDocumentListener(new DocumentListener() 
+        {
+            private void validateCustomerName() 
+            {
                 String customerName = customerNameField.getText().trim();
-                if (!customerName.isEmpty() && !customerName.matches("^[a-zA-Z\\s]+$")) {
+                if (!customerName.isEmpty() && !customerName.matches("^[a-zA-Z\\s]+$")) 
+                {
                     customerNameField.setBackground(Color.PINK);
                     errorLabel.setText("Customer name can only contain letters and spaces.");
                     errorLabel.setVisible(true);
-                } else {
+                } else 
+                {
                     customerNameField.setBackground(Color.WHITE);
                     errorLabel.setVisible(false);
                 }
             }
 
-            
-            public void insertUpdate(DocumentEvent e) { validateCustomerName(); }
-            
-            public void removeUpdate(DocumentEvent e) { validateCustomerName(); }
-            
-            public void changedUpdate(DocumentEvent e) { validateCustomerName(); }
+            public void insertUpdate(DocumentEvent e) 
+            { 
+                validateCustomerName(); 
+            }
+            public void removeUpdate(DocumentEvent e) 
+            { 
+                validateCustomerName(); 
+            }
+            public void changedUpdate(DocumentEvent e) 
+            { 
+                validateCustomerName(); 
+            }
         });
-
 
         JPanel centerPanel = new JPanel(new GridLayout(1, 2));
 
@@ -81,7 +97,7 @@ public class StationeryShopGUI {
 
         frame.add(centerPanel, BorderLayout.CENTER);
 
-        // Bottom Panel: Input and buttons
+        
         JPanel bottomPanel = new JPanel(new FlowLayout());
         bottomPanel.add(new JLabel("Product ID: "));
         productIdField = new JTextField(5);
@@ -112,12 +128,15 @@ public class StationeryShopGUI {
         frame.setVisible(true);
     }
 
-    private void handleAddOrder() {
-        try {
+    private void handleAddOrder() 
+    {
+        try 
+        {
             int productId = Integer.parseInt(productIdField.getText().trim());
             int quantity = Integer.parseInt(quantityField.getText().trim());
 
-            if (productId < 1 || productId > 10 || quantity <= 0) {
+            if (productId < 1 || productId > 10 || quantity <= 0) 
+            {
                 showError("Invalid Product ID or Quantity.");
                 return;
             }
@@ -128,13 +147,17 @@ public class StationeryShopGUI {
             totalAmount += productPrice * quantity;
 
             updateOrderSummary();
-        } catch (NumberFormatException e) {
-            showError("Product ID and Quantity must be numbers.");
+        } 
+        catch (NumberFormatException e) 
+        {
+                showError("Product ID and Quantity must be numbers.");
         }
     }
 
-    private void handleRemoveItem() {
-        if (orderItems.isEmpty()) {
+    private void handleRemoveItem() 
+    {
+        if (orderItems.isEmpty()) 
+        {
             showError("No items to remove.");
             return;
         }
@@ -143,13 +166,15 @@ public class StationeryShopGUI {
         String selectedItem = (String) JOptionPane.showInputDialog(frame, "Select an item to remove:", "Remove Item",
                 JOptionPane.PLAIN_MESSAGE, null, itemNames, itemNames[0]);
 
-        if (selectedItem != null) {
+        if (selectedItem != null) 
+        {
             orderItems.removeIf(item -> item.toString().equals(selectedItem));
             updateOrderSummary();
         }
     }
 
-    private void handleReduceQuantity() {
+    private void handleReduceQuantity() 
+    {
         if (orderItems.isEmpty()) {
             showError("No items to reduce quantity.");
             return;
@@ -159,26 +184,34 @@ public class StationeryShopGUI {
         String selectedItem = (String) JOptionPane.showInputDialog(frame, "Select an item to reduce quantity:", "Reduce Quantity",
                 JOptionPane.PLAIN_MESSAGE, null, itemNames, itemNames[0]);
 
-        if (selectedItem != null) {
-            for (OrderItem item : orderItems) {
-                if (item.toString().equals(selectedItem)) {
+        if (selectedItem != null) 
+        {
+            for (OrderItem item : orderItems) 
+            {
+                if (item.toString().equals(selectedItem)) 
+                {
                     String newQuantityText = JOptionPane.showInputDialog(frame, "Enter new quantity:");
-                    try {
+                    try 
+                    {
                         int newQuantity = Integer.parseInt(newQuantityText);
-                        if (newQuantity <= 0 || newQuantity >= item.getQuantity()) {
-                            showError("Invalid quantity.");
+                        if (newQuantity <= 0 || newQuantity >= item.getQuantity()) 
+                        {
+                            showError("Invalid quantity. Must be positive and less than current quantity.");
                             return;
                         }
                         int difference = item.getQuantity() - newQuantity;
                         item.reduceQuantity(difference);
                         totalAmount -= difference * item.getPrice();
 
-                        if (item.getQuantity() == 0) {
+                        if (item.getQuantity() == 0) 
+                        {
                             orderItems.remove(item);
                         }
                         updateOrderSummary();
                         break;
-                    } catch (NumberFormatException e) {
+                    } 
+                    catch (NumberFormatException e) 
+                        {
                         showError("Quantity must be a number.");
                     }
                 }
@@ -186,41 +219,125 @@ public class StationeryShopGUI {
         }
     }
 
-    private void handleSubmitOrder() {
+    private void handleSubmitOrder() 
+    {
         String customerName = customerNameField.getText().trim();
-        if (customerName.isEmpty() || !customerName.matches("^[a-zA-Z\\s]+$")) {
+        if (customerName.isEmpty() || !customerName.matches("^[a-zA-Z\\s]+$")) 
+        {
             showError("Invalid customer name.");
             return;
         }
-        if (orderItems.isEmpty()) {
+        if (orderItems.isEmpty()) 
+        {
             showError("No items in the order.");
             return;
         }
 
-        JOptionPane.showMessageDialog(frame, "Order submitted successfully for " + customerName + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
-        orderItems.clear();
-        updateOrderSummary();
-    }
-
-    private void updateOrderSummary() {
-        StringBuilder summary = new StringBuilder();
-        totalAmount = 0;
-
-        for (OrderItem item : orderItems) {
-            summary.append(item.toString()).append("\n");
-            totalAmount += item.getPrice() * item.getQuantity();
+        
+        int customerId = saveCustomer(customerName);
+        if (customerId != -1) 
+        {
+            saveOrder(customerId, orderItems);
+            JOptionPane.showMessageDialog(frame, "Order submitted successfully for " + customerName + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            orderItems.clear();
+            updateOrderSummary();
+        } 
+        else 
+        {
+            showError("Failed to save order. Please try again.");
         }
-
-        orderSummaryArea.setText(summary.toString());
-        totalAmountLabel.setText("Total Amount: ₹" + totalAmount);
     }
 
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
+    private int saveCustomer(String customerName) 
+    {
+        int customerId = -1;
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD)) 
+        {
+            String insertCustomerSQL = "INSERT INTO customer (name) VALUES (?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertCustomerSQL, Statement.RETURN_GENERATED_KEYS)) 
+            {
+                preparedStatement.setString(1, customerName);
+                preparedStatement.executeUpdate();
+
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) 
+                {
+                    if (generatedKeys.next()) 
+                    {
+                        customerId = generatedKeys.getInt(1);
+                    }
+                }
+            }
+        } 
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+        return customerId;
     }
 
-    private String getProductById(int id) {
-        switch (id) {
+    private void saveOrder(int customerId, List<OrderItem> orderItems) 
+    {
+        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD)) 
+        {
+            String insertOrderSQL = "INSERT INTO orders (customer_id, total_amount) VALUES (?, ?)";
+            int orderId = -1;
+            try (PreparedStatement orderStatement = connection.prepareStatement(insertOrderSQL, Statement.RETURN_GENERATED_KEYS)) 
+            {
+                orderStatement.setInt(1, customerId);
+                orderStatement.setInt(2, totalAmount);
+                orderStatement.executeUpdate();
+
+                try (ResultSet generatedKeys = orderStatement.getGeneratedKeys()) 
+                {
+                    if (generatedKeys.next()) 
+                    {
+                        orderId = generatedKeys.getInt(1);
+                    }
+                }
+            }
+
+            String insertOrderItemSQL = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement itemStatement = connection.prepareStatement(insertOrderItemSQL)) 
+            {
+                for (OrderItem item : orderItems) 
+                {
+                    itemStatement.setInt(1, orderId);
+                    itemStatement.setInt(2, getProductIdByName(item.getName()));
+                    itemStatement.setInt(3, item.getQuantity());
+                    itemStatement.setInt(4, item.getPrice());
+                    itemStatement.addBatch();
+                }
+                itemStatement.executeBatch();
+            }
+        } 
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private int getProductIdByName(String productName) 
+    {
+        switch (productName) 
+        {
+            case "Pen": return 1;
+            case "Notebook": return 2;
+            case "Eraser": return 3;
+            case "Marker": return 4;
+            case "Folder": return 5;
+            case "Pencil": return 6;
+            case "Highlighter": return 7;
+            case "Stapler": return 8;
+            case "Glue": return 9;
+            case "Scissors": return 10;
+            default: return -1;
+        }
+    }
+
+    private String getProductById(int productId) 
+    {
+        switch (productId) 
+        {
             case 1: return "Pen";
             case 2: return "Notebook";
             case 3: return "Eraser";
@@ -231,12 +348,14 @@ public class StationeryShopGUI {
             case 8: return "Stapler";
             case 9: return "Glue";
             case 10: return "Scissors";
-            default: return "Unknown Product";
+            default: return "Unknown";
         }
     }
 
-    private int getPriceById(int id) {
-        switch (id) {
+    private int getPriceById(int productId) 
+    {
+        switch (productId) 
+        {
             case 1: return 10;
             case 2: return 50;
             case 3: return 5;
@@ -251,38 +370,63 @@ public class StationeryShopGUI {
         }
     }
 
-    public static void main(String[] args) {
+    private void updateOrderSummary() 
+    {
+        StringBuilder summary = new StringBuilder("Product\tQuantity\tPrice\n");
+        for (OrderItem item : orderItems) 
+        {
+            summary.append(item).append("\n");
+        }
+        orderSummaryArea.setText(summary.toString());
+        totalAmountLabel.setText("Total Amount: ₹" + totalAmount);
+    }
+
+    private void showError(String message) 
+    {
+        JOptionPane.showMessageDialog(frame, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public static void main(String[] args) 
+    {
         SwingUtilities.invokeLater(StationeryShopGUI::new);
     }
 }
 
-class OrderItem {
-    private String name;
-    private int price;
+class OrderItem 
+{
+    private final String name;
+    private final int price;
     private int quantity;
 
-    public OrderItem(String name, int price, int quantity) {
+    public OrderItem(String name, int price, int quantity) 
+    {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
     }
 
-    public int getPrice() {
+    public String getName() 
+    {
+        return name;
+    }
+
+    public int getPrice() 
+    {
         return price;
     }
 
-    public int getQuantity() {
+    public int getQuantity() 
+    {
         return quantity;
     }
 
-    public void reduceQuantity(int amount) {
-        if (amount <= quantity) {
-            quantity -= amount;
-        }
+    public void reduceQuantity(int amount) 
+    {
+        this.quantity -= amount;
     }
 
-    
+  
     public String toString() {
-        return name + " (₹" + price + " x " + quantity + ")";
-    }
+        return name + "\t" + quantity + "\t₹" + (price * quantity);
+    }
 }
